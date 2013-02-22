@@ -41,6 +41,7 @@ SET(EXECUTABLES_LIST
 	PropertyPlotter
 	ProteinCheck
 	RMSDCalculator
+	ScaffoldFingerprintClustering
 	ScoreAnalyzer
 	SideChainGridBuilder
 	SimilarityAnalyzer

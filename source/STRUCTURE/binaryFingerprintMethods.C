@@ -307,7 +307,11 @@ bool BinaryFingerprintMethods::parseBinaryFingerprint(const String& fprint, vect
 		}
 	}
 	
-	reverse(features.begin(), features.end());
+	if (features[0] < features[1])
+	{
+		// Not yet in decreasing order ...
+		reverse(features.begin(), features.end());
+	}
 	
 	return true;
 }
@@ -1941,6 +1945,97 @@ bool BinaryFingerprintMethods::calculateSelectionMedoid(const vector<unsigned in
 }
 
 
+bool BinaryFingerprintMethods::averageLinkageMerger(const vector<unsigned int>& selection,
+						    map<unsigned int, vector<unsigned int> >& cluster_selection,
+						    const unsigned int merge_steps)
+{
+	cluster_selection.clear();
+	unsigned int n_molecules = selection.size();
+	
+	if (n_molecules == 1)
+	{
+		cluster_selection.insert(make_pair(1, vector<unsigned int>(1, 0)));
+		
+		return true;
+	}
+	
+	if (checkInputData(selection) == false)
+	{
+		return false;
+	}
+	
+	// Set active InvertedIndices size
+	active_iids_size_ = 100;
+	
+	clustering_method_ = STORED_DATA_PARALLEL;
+	
+	// Pointer to final root cluster
+	Cluster* root = NULL;
+	Cluster *cluster;
+	n_clusters_ = 0;
+	
+	vec_actives_.clear();
+	leaf_clusters_.clear();
+	// ----------------------------------------------------------------------
+	// Stored data average linkage using RNN parallel algorithm
+	// ----------------------------------------------------------------------
+	if (verbosity_ >= 10)
+	{
+		Log << "++ RNN parallel method stored data" << endl;
+	}
+	
+	for (unsigned int i=0; i!=n_molecules; ++i)
+	{
+		// Create new singleton cluster
+		cluster = createCluster();
+		
+		cluster->nn = NULL;
+		cluster->is_rnn = false;
+		// 			cluster->leaf_members.push_back((*lib_features_)[selection[i]]);
+		cluster->leaf_members.push_back(&(*lib_features_)[selection[i]]);
+		
+		vec_actives_.push_back(cluster);
+		leaf_clusters_.push_back(cluster);
+	}
+	
+	vector<pair<unsigned int, float> > nn_data;
+	// Nearest neighbours have not been calculated yet.
+	store_nns_ = true;
+	// Set appropriate function pointer for calculation of pairwise nearest neighbours
+	pairwiseSimilaritiesBase = &BinaryFingerprintMethods::pairwiseSimilaritiesNearestNeighbours;
+	// Run pairwise similarity calculation
+	pairwiseSimilarities(selection, nn_data);
+	
+	for (unsigned int i=0; i!=n_molecules; ++i)
+	{
+		vec_actives_[i]->nn = vec_actives_[nn_data[i].first];
+		vec_actives_[i]->predecessor_sim = nn_data[i].second;
+	}
+	
+	nn_data.clear();
+	
+	// Run RNN Parallel average linkage 
+	averageLinkageParallel(root, merge_steps);
+	
+	
+	for (unsigned int i=0; i!=vec_actives_.size(); ++i)
+	{
+		enumerateClusterMembers(vec_actives_[i], i);
+	}
+	
+	pair<map<unsigned int, vector<unsigned int> >::iterator, bool> cl_inserter;
+	for (unsigned int i=0; i!=leaf_clusters_.size(); ++i)
+	{
+		cl_inserter = cluster_selection.insert(make_pair(leaf_clusters_[i]->c_index, vector<unsigned int>()));
+		cl_inserter.first->second.push_back(leaf_clusters_[i]->c_id);
+	}
+	
+	finalizeClustering();
+	
+	return true;
+}
+
+
 bool BinaryFingerprintMethods::averageLinkageClustering(const vector<unsigned int>& selection, 
 							vector<pair<unsigned int, float> >& nn_data,
 							map<unsigned int, vector<unsigned int> >& cluster_selection)
@@ -2029,7 +2124,7 @@ bool BinaryFingerprintMethods::averageLinkageClustering(const vector<unsigned in
 		nn_data.clear();
 		
 		// Run RNN Parallel average linkage 
-		averageLinkageParallel(root);
+		averageLinkageParallel(root, 0);
 	}
 	else
 	{
@@ -2560,7 +2655,7 @@ void BinaryFingerprintMethods::calculateParallelSimilaritiesThread(const unsigne
 }
 
 
-void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root)
+void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root, const unsigned int merging_steps)
 {
 	if (threads_==NULL)
 	{
@@ -2586,8 +2681,20 @@ void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root)
 	//vector<pair<unsigned short*, unsigned int> > tmp;
 	vector<pair<const vector<unsigned short>*, unsigned int> > tmp;
 	
+	unsigned int merge_counter = 0;
 	while (true)
 	{
+		if (merging_steps != 0)
+		{
+			if (merge_counter == merging_steps)
+			{
+				destroyThreadData();
+				return;
+			}
+			
+			++merge_counter;
+		}
+		
 		rnn_pairs = 0;
 		for (unsigned int i=0; i!=vec_actives_.size(); ++i)
 		{

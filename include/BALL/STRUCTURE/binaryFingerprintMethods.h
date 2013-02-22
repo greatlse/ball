@@ -311,6 +311,11 @@ namespace BALL
 						      std::map<unsigned int, std::vector<unsigned int> >& cluster_selection);
 			
 			
+			bool averageLinkageMerger(const std::vector<unsigned int>& selection, 
+						  std::map<unsigned int, std::vector<unsigned int> >& cluster_selection,
+						  const unsigned int merge_steps);
+			
+			
 			/** 
 			 * Calculation of the medoid of a set of molecules defined by selection. Medoid has the highest average similarity to all other compounds.
 			 * @param selection Indices of molecules in lib_features_ vector for which the medoid should be calculated.
@@ -959,7 +964,7 @@ namespace BALL
 			 * F. Murtagh, Compstat Lectures vol. 4, 1985, Physica-Verlag Würzburg-Wien. (Volume titel: Multidimensional clustering algorithms)
 			 * @param root Finally points to the root node, i.e. the final cluster comprising all other nodes.
 			 */
-			void averageLinkageParallel(Cluster*& root);
+			void averageLinkageParallel(Cluster*& root, const unsigned int merge_steps);
 			
 			
 			/**
