@@ -1349,7 +1349,7 @@ void BinaryFingerprintMethods::pairwiseSimilaritiesThread(const unsigned int thr
 		
 		if (thread_id == 0)
 		{
-			if (count == 100)
+			if (count == 100 && Log.getLevel() > 0)
 			{
 				double perc = 100.0 * double((n_comparisons_backup_ - index) /  double(n_comparisons_backup_));
 				
@@ -1370,7 +1370,10 @@ void BinaryFingerprintMethods::pairwiseSimilaritiesThread(const unsigned int thr
 		(this->*pairwiseSimilaritiesBase)(row_index, col_index, t_data);
 	}
 	
-	cerr << endl;
+	if (thread_id == 0 && Log.getLevel() > 0)
+	{
+		cerr << endl;
+	}
 }
 
 
@@ -1451,11 +1454,9 @@ bool BinaryFingerprintMethods::pairwiseSimilarities(const vector<unsigned int>& 
 		Log << "++ Calculations running" << endl;
 	}
 	
-	LongSize total_edge_count = 0;
 	for (unsigned int i=0; i!=n_threads; ++i)
 	{
 		threads_[i].join();
-		total_edge_count += thread_data_[i].first;
 	}
 	
 	timer->stop();
@@ -1613,7 +1614,6 @@ bool BinaryFingerprintMethods::connectedComponents(const vector<unsigned int>& s
 				ccs_tmp[ds->find_set(current_vertex)] = unordered_map<unsigned int, unsigned int>();
 			}
 			
-// 			ccs_tmp[ds->find_set(current_vertex)][current_vertex] = ccs_tmp[ds->find_set(current_vertex)].size();
 			ccs_tmp[ds->find_set(current_vertex)].insert(make_pair(current_vertex, 0));
 			ccs_tmp[ds->find_set(current_vertex)][current_vertex] = ccs_tmp[ds->find_set(current_vertex)].size();
 		}

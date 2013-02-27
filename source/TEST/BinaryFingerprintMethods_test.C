@@ -227,7 +227,13 @@ CHECK(BinaryFingerprintMethods(Options, LibraryFeatures))
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::N_THREADS, 1);
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::VERBOSITY, 5);
 	
-	BinaryFingerprintMethods bfm(options, lib);
+	vector<vector<unsigned short>* > lib_;
+	for (unsigned int i=0; i!=lib.size(); ++i)
+	{
+		lib_.push_back(&lib[i]);
+	}
+	
+	BinaryFingerprintMethods bfm(options, lib_);
 	
 	const Options o1 = bfm.getOptions();
 	
@@ -250,7 +256,19 @@ CHECK(BinaryFingerprintMethods(Options, LibraryFeatures, QueryFeatures))
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::N_THREADS, 1);
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::VERBOSITY, 5);
 	
-	BinaryFingerprintMethods bfm(options, lib, query);
+	vector<vector<unsigned short>* > lib_;
+	for (unsigned int i=0; i!=lib.size(); ++i)
+	{
+		lib_.push_back(&lib[i]);
+	}
+	
+	vector<vector<unsigned short>* > query_;
+	for (unsigned int i=0; i!=query.size(); ++i)
+	{
+		query_.push_back(&query[i]);
+	}
+	
+	BinaryFingerprintMethods bfm(options, lib_, query_);
 	
 	const Options o1 = bfm.getOptions();
 	
@@ -273,7 +291,19 @@ CHECK(BinaryFingerprintMethods(const BinaryFingerprintMethods& bfm))
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::N_THREADS, 1);
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::VERBOSITY, 5);
 	
-	BinaryFingerprintMethods bfm(options, lib, query);
+	vector<vector<unsigned short>* > lib_;
+	for (unsigned int i=0; i!=lib.size(); ++i)
+	{
+		lib_.push_back(&lib[i]);
+	}
+	
+	vector<vector<unsigned short>* > query_;
+	for (unsigned int i=0; i!=query.size(); ++i)
+	{
+		query_.push_back(&query[i]);
+	}
+	
+	BinaryFingerprintMethods bfm(options, lib_, query_);
 	BinaryFingerprintMethods bfm_copy(bfm);
 	
 	TEST_EQUAL(bfm_copy.getTargetLibrarySize(), lib.size());
@@ -298,7 +328,19 @@ CHECK(Assignment)
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::N_THREADS, 1);
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::VERBOSITY, 3);
 	
-	BinaryFingerprintMethods bfm(options, lib, query);
+	vector<vector<unsigned short>* > lib_;
+	for (unsigned int i=0; i!=lib.size(); ++i)
+	{
+		lib_.push_back(&lib[i]);
+	}
+	
+	vector<vector<unsigned short>* > query_;
+	for (unsigned int i=0; i!=query.size(); ++i)
+	{
+		query_.push_back(&query[i]);
+	}
+	
+	BinaryFingerprintMethods bfm(options, lib_, query_);
 	BinaryFingerprintMethods bfm_copy = bfm;
 	
 	TEST_EQUAL(bfm_copy.getTargetLibrarySize(), lib.size());
@@ -342,8 +384,20 @@ CHECK(cutoffSearch())
 	}
 	lbf.close();
 	
-	bfm.setLibraryFeatures(lib);
-	bfm.setQueryFeatures(query);
+	vector<vector<unsigned short>* > lib_;
+	for (unsigned int i=0; i!=lib.size(); ++i)
+	{
+		lib_.push_back(&lib[i]);
+	}
+	
+	vector<vector<unsigned short>* > query_;
+	for (unsigned int i=0; i!=query.size(); ++i)
+	{
+		query_.push_back(&query[i]);
+	}
+	
+	bfm.setLibraryFeatures(lib_);
+	bfm.setQueryFeatures(query_);
 	
 	float cutoff = 0.0;
 	String outfile_name = "_BALL_CUTOFF_SEARCH_TEST.tmp";
@@ -434,24 +488,6 @@ CHECK(connectedComponents(store_nns=true))
 	}
 	lbf.close();
 	
-	
-// 	unordered_map<unsigned int, unordered_map<unsigned int, map<string, float> > >::iterator it = all_ccs.begin();
-// 	for (; it!=all_ccs.end(); ++it)
-// 	{
-// 		if (it->first == 9)
-// 		{
-// 			for (ccs_it=it->second.begin(); ccs_it!=it->second.end(); ++ccs_it)
-// 			{
-// 				cerr << "# " << ccs_it->first << endl;
-// 				for (cc_it=ccs_it->second.begin(); cc_it!=ccs_it->second.end(); ++cc_it)
-// 				{
-// 					cerr << cc_it->first << " " << cc_it->second << endl;
-// 				}
-// 			}
-// 		}
-// 	}
-	
-	
 	Options options;
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::BLOCKSIZE, 27);
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::N_THREADS, 2);
@@ -475,7 +511,13 @@ CHECK(connectedComponents(store_nns=true))
 	
 	TEST_EQUAL(bfm.connectedComponents(m_indices, ccs, nn_data, cutoff, store_nns), false);
 	
-	bfm.setLibraryFeatures(fprints);
+	vector<vector<unsigned short>* > fprints_;
+	for (unsigned int i=0; i!=fprints.size(); ++i)
+	{
+		fprints_.push_back(&fprints[i]);
+	}
+	
+	bfm.setLibraryFeatures(fprints_);
 	
 	m_indices.clear();
 	TEST_EQUAL(bfm.connectedComponents(m_indices, ccs, nn_data, cutoff, store_nns), false);
@@ -484,6 +526,7 @@ CHECK(connectedComponents(store_nns=true))
 	{
 		m_indices.push_back(i);
 	}
+	
 	
 	cutoff = 0.0;
 	while (cutoff < 0.95)
@@ -496,7 +539,7 @@ CHECK(connectedComponents(store_nns=true))
 		for (unsigned int i=0; i!=ccs.size(); ++i)
 		{
 			tmp_cc.clear();
-			min_id = fprints.size() + 1;
+			min_id = fprints_.size() + 1;
 			
 			for (unsigned int j=0; j!=ccs[i].size(); ++j)
 			{
@@ -531,6 +574,8 @@ CHECK(connectedComponents(store_nns=true))
 		
 		cutoff += 0.1;
 	}
+	
+	
 RESULT
 
 CHECK(connectedComponents(store_nns=false))
@@ -604,12 +649,18 @@ CHECK(connectedComponents(store_nns=false))
 	
 	TEST_EQUAL(bfm.connectedComponents(m_indices, ccs, nn_data, cutoff, store_nns), false);
 	
-	bfm.setLibraryFeatures(fprints);
+	vector<vector<unsigned short>* > fprints_;
+	for (unsigned int i=0; i!=fprints.size(); ++i)
+	{
+		fprints_.push_back(&fprints[i]);
+	}
+	
+	bfm.setLibraryFeatures(fprints_);
 	
 	m_indices.clear();
 	TEST_EQUAL(bfm.connectedComponents(m_indices, ccs, nn_data, cutoff, store_nns), false);
 	
-	for (unsigned int i=0; i!=fprints.size(); ++i)
+	for (unsigned int i=0; i!=fprints_.size(); ++i)
 	{
 		m_indices.push_back(i);
 	}
@@ -625,7 +676,7 @@ CHECK(connectedComponents(store_nns=false))
 		for (unsigned int i=0; i!=ccs.size(); ++i)
 		{
 			tmp_cc.clear();
-			min_id = fprints.size() + 1;
+			min_id = fprints_.size() + 1;
 			
 			for (unsigned int j=0; j!=ccs[i].size(); ++j)
 			{
@@ -715,7 +766,13 @@ CHECK(calculateSelectionMedoid())
 		m_indices.push_back(i);
 	}
 	
-	bfm.setLibraryFeatures(query);
+	vector<vector<unsigned short>* > query_;
+	for (unsigned int i=0; i!=query.size(); ++i)
+	{
+		query_.push_back(&query[i]);
+	}
+	
+	bfm.setLibraryFeatures(query_);
 	TEST_EQUAL(bfm.calculateSelectionMedoid(m_indices, medoid_index, avg_sims), true);
 	
 	TEST_EQUAL(avg_sims.size(), query.size());
@@ -733,7 +790,13 @@ CHECK(calculateSelectionMedoid())
 		m_indices.push_back(i);
 	}
 	
-	bfm.setLibraryFeatures(lib);
+	vector<vector<unsigned short>* > lib_;
+	for (unsigned int i=0; i!=lib.size(); ++i)
+	{
+		lib_.push_back(&lib[i]);
+	}
+	
+	bfm.setLibraryFeatures(lib_);
 	TEST_EQUAL(bfm.calculateSelectionMedoid(m_indices, medoid_index, avg_sims), true);
 	
 	TEST_EQUAL(avg_sims.size(), lib.size());
@@ -756,17 +819,17 @@ CHECK(averageLinkageClustering( RNN_PARALLEL ))
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::MAX_CLUSTERS, 0);
 	options.setDefaultInteger(BinaryFingerprintMethods::Option::VERBOSITY, 0);
 	
-	vector<vector<unsigned short> > target;
-	target.push_back(fprints[0]);
-	target.push_back(fprints[1]);
-	target.push_back(fprints[2]);
-	target.push_back(fprints[56]);
-	target.push_back(fprints[57]); 
-	target.push_back(fprints[58]);
-	target.push_back(fprints[91]);
-	target.push_back(fprints[92]);
-	target.push_back(fprints[108]);
-	target.push_back(fprints[147]);
+	vector<vector<unsigned short>* > target;
+	target.push_back(&fprints[0]);
+	target.push_back(&fprints[1]);
+	target.push_back(&fprints[2]);
+	target.push_back(&fprints[56]);
+	target.push_back(&fprints[57]); 
+	target.push_back(&fprints[58]);
+	target.push_back(&fprints[91]);
+	target.push_back(&fprints[92]);
+	target.push_back(&fprints[108]);
+	target.push_back(&fprints[147]);
 	
 	vector<unsigned  int> m_indices;
 	for (unsigned int i=0; i!=target.size(); ++i)
@@ -816,7 +879,13 @@ CHECK(averageLinkageClustering( RNN_SWITCHED ))
 	vector<pair<unsigned int, float> > nn_data;
 	map<unsigned int, vector<unsigned int> > cluster_selection;
 	
-	BinaryFingerprintMethods bfm(options, fprints);
+	vector<vector<unsigned short>* > fprints_;
+	for (unsigned int i=0; i!=fprints.size(); ++i)
+	{
+		fprints_.push_back(&fprints[i]);
+	}
+	
+	BinaryFingerprintMethods bfm(options, fprints_);
 	bfm.averageLinkageClustering(m_indices, nn_data, cluster_selection);
 	
 	TEST_EQUAL(cluster_selection.size(), 3);
