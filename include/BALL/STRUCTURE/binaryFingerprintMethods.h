@@ -73,7 +73,7 @@ namespace BALL
 		//@{
 		
 		typedef std::vector<InvertedIndex*> InvertedIndices;
-		typedef std::vector<std::vector<unsigned short> > FingerprintFeatures;
+		typedef std::vector<std::vector<unsigned short>* > FingerprintFeatures;
 		
 		typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> SimilarityGraph;
 		typedef boost::graph_traits<SimilarityGraph>::vertex_descriptor Vertex;
@@ -550,6 +550,7 @@ namespace BALL
 			 * This value is decreased during calculations and finally 0 to indicate that all calculations have been performed!
 			 */
 			LongSize n_comparisons_;
+			LongSize n_comparisons_backup_;
 			
 			
 			/**
@@ -964,7 +965,9 @@ namespace BALL
 			 * F. Murtagh, Compstat Lectures vol. 4, 1985, Physica-Verlag Würzburg-Wien. (Volume titel: Multidimensional clustering algorithms)
 			 * @param root Finally points to the root node, i.e. the final cluster comprising all other nodes.
 			 */
-			void averageLinkageParallel(Cluster*& root, const unsigned int merge_steps);
+			void averageLinkageParallel(Cluster*& root);
+			
+			void averageLinkageParallelMerger(const unsigned int merge_steps, boost::unordered_set<Cluster*>&);
 			
 			
 			/**

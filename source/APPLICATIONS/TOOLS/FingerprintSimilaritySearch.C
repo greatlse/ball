@@ -55,11 +55,11 @@ String fp_tag;
 String id_tag;
 
 
-void readFingerprintsCSV(LineBasedFile& fprints_in, vector<vector<unsigned short> >& molecule_features, vector<String>& identifiers)
+void readFingerprintsCSV(LineBasedFile& fprints_in, vector<vector<unsigned short>* >& molecule_features, vector<String>& identifiers)
 {
 	String fprint;
 	String identifier;
-	vector<unsigned short> features;
+	vector<unsigned short>* features;
 	unsigned int mol_count = 0;
 	
 	molecule_features.clear();
@@ -88,13 +88,15 @@ void readFingerprintsCSV(LineBasedFile& fprints_in, vector<vector<unsigned short
 			fixed_size_len = fprint.size();
 		}
 		
-		if (BinaryFingerprintMethods::parseBinaryFingerprint(fprint, features, fprint_format))
+		features = new vector<unsigned short>;
+		if (BinaryFingerprintMethods::parseBinaryFingerprint(fprint, *features, fprint_format))
 		{
 			molecule_features.push_back(features);
 			identifiers.push_back(identifier);
 		}
 		else
 		{
+			delete features;
 			Log.error() << "-- WARNING: Fingerprint could not be read" << endl;
 		}
 		
@@ -108,11 +110,11 @@ void readFingerprintsCSV(LineBasedFile& fprints_in, vector<vector<unsigned short
 }
 
 
-void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short> >& molecule_features, vector<String>& identifiers)
+void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short>* >& molecule_features, vector<String>& identifiers)
 {
 	String fprint;
 	String identifier;
-	vector<unsigned short> features;
+	vector<unsigned short>* features;
 	unsigned int mol_count = 0;
 	
 	molecule_features.clear();
@@ -133,12 +135,17 @@ void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short> >& mo
 					fixed_size_len = fprint.size();
 				}
 				
-				if (BinaryFingerprintMethods::parseBinaryFingerprint(fprint, features, fprint_format))
+				features = new vector<unsigned short>;
+				if (BinaryFingerprintMethods::parseBinaryFingerprint(fprint, *features, fprint_format))
 				{
 					molecule_features.push_back(features);
 					identifiers.push_back(identifier);
 					
 					++mol_count;
+				}
+				else
+				{
+					delete features;
 				}
 			}
 		}
@@ -152,7 +159,7 @@ void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short> >& mo
 }
 
 
-bool readFingerprints(const String& input_file, vector<vector<unsigned short> >& mol_features, vector<String>& mol_identifiers)
+bool readFingerprints(const String& input_file, vector<vector<unsigned short>* >& mol_features, vector<String>& mol_identifiers)
 {
 	if (!MolFileFactory::isFileExtensionSupported(input_file))
 	{
@@ -363,7 +370,7 @@ $ FingerprintSimilaritySearch -t target.sdf -q query.smi -o results -fp_tag FPRI
 	
 	bool read_success;
 	vector<String> lib_identifiers;
-	vector<vector<unsigned short> > lib_features;
+	vector<vector<unsigned short>* > lib_features;
 	
 	read_success = readFingerprints(parpars.get("t"), lib_features, lib_identifiers);
 	
@@ -378,7 +385,7 @@ $ FingerprintSimilaritySearch -t target.sdf -q query.smi -o results -fp_tag FPRI
 	
 	is_query_sdf = false;
 	vector<String> query_identifiers;
-	vector<vector<unsigned short> > query_features;
+	vector<vector<unsigned short>* > query_features;
 	
 	read_success = readFingerprints(parpars.get("q"), query_features, query_identifiers);
 	
@@ -400,6 +407,18 @@ $ FingerprintSimilaritySearch -t target.sdf -q query.smi -o results -fp_tag FPRI
 	
 	BinaryFingerprintMethods bfm(options, lib_features, query_features);
 	bool success = bfm.cutoffSearch(sim_cutoff, outfile_name);
+	
+	for (unsigned int i=0; i!=lib_features.size(); ++i)
+	{
+		delete lib_features[i];
+	}
+	lib_features.clear();
+	
+	for (unsigned int i=0; i!=query_features.size(); ++i)
+	{
+		delete query_features[i];
+	}
+	lib_features.clear();
 	
 	if (!success)
 	{

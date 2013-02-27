@@ -436,22 +436,22 @@ bool BinaryFingerprintMethods::setLibraryFeatures(const FingerprintFeatures& lib
 	
 	for (unsigned int i=0; i!=lib_features.size(); ++i)
 	{
-		if (lib_features[i].empty())
+		if (lib_features[i]->empty())
 		{
 			lib_features_ = 0;
 			return false;
 		}
 		
-		previous = lib_features[i][0];
-		for (unsigned int j=1; j!=lib_features[i].size(); ++j)
+		previous = (*lib_features[i])[0];
+		for (unsigned int j=1; j!=lib_features[i]->size(); ++j)
 		{
-			if (lib_features[i][j] >= previous)
+			if ((*lib_features[i])[j] >= previous)
 			{
 				lib_features_ = 0;
 				return false;
 			}
 			
-			previous = lib_features[i][j];
+			previous = (*lib_features[i])[j];
 		}
 	}
 	
@@ -467,22 +467,22 @@ bool BinaryFingerprintMethods::setQueryFeatures(const FingerprintFeatures& query
 	
 	for (unsigned int i=0; i!=query_features.size(); ++i)
 	{
-		if (query_features[i].empty())
+		if (query_features[i]->empty())
 		{
 			query_features_ = 0;
 			return false;
 		}
 		
-		previous = query_features[i][0];
-		for (unsigned int j=1; j!=query_features[i].size(); ++j)
+		previous = (*query_features[i])[0];
+		for (unsigned int j=1; j!=query_features[i]->size(); ++j)
 		{
-			if (query_features[i][j] >= previous)
+			if ((*query_features[i])[j] >= previous)
 			{
 				query_features_ = 0;
 				return false;
 			}
 			
-			previous = query_features[i][j];
+			previous = (*query_features[i])[j];
 		}
 	}
 	
@@ -1338,12 +1338,26 @@ void BinaryFingerprintMethods::pairwiseSimilaritiesThread(const unsigned int thr
 	LongSize index;
 	LongSize row_index, col_index;
 	
+	unsigned int count = 0;
 	while (getNextComparisonIndex(index))
 	{
 		// Reset common counts matrix to 0
 		for (unsigned short m=0; m<=blocksize_; ++m)
 		{
 			bzero(cc_matrix[m], cc_matrix_size_);
+		}
+		
+		if (thread_id == 0)
+		{
+			if (count == 100)
+			{
+				double perc = 100.0 * double((n_comparisons_backup_ - index) /  double(n_comparisons_backup_));
+				
+				cerr << "\r++ Status: " << perc << " %          ";
+				count = 0;
+			}
+			
+			++count;
 		}
 		
 		// Calculate indices of next InvertedIndex pair to compare
@@ -1355,6 +1369,8 @@ void BinaryFingerprintMethods::pairwiseSimilaritiesThread(const unsigned int thr
 		// Calculate similarities
 		(this->*pairwiseSimilaritiesBase)(row_index, col_index, t_data);
 	}
+	
+	cerr << endl;
 }
 
 
@@ -1368,15 +1384,12 @@ bool BinaryFingerprintMethods::pairwiseSimilarities(const vector<unsigned int>& 
 	unsigned int n_molecules = selection.size();
 	
 	// Create inverted indices for library and query molecules
-	//vector<pair<unsigned short*, unsigned int> > tmp;
 	vector<pair<const vector<unsigned short>*, unsigned int> > tmp;
 	if (lib_features_ != NULL)
 	{
-		//for (unsigned int i=0; i!=lib_features_->size(); ++i)
 		for (unsigned int i=0; i!=n_molecules; ++i)
 		{
-// 			tmp.push_back(make_pair((*lib_features_)[selection[i]], 0));
-			tmp.push_back(make_pair(&(*lib_features_)[selection[i]], 0));
+			tmp.push_back(make_pair((*lib_features_)[selection[i]], 0));
 		}
 		createInvertedIndices(tmp, lib_iindices_);
 	}
@@ -1391,6 +1404,7 @@ bool BinaryFingerprintMethods::pairwiseSimilarities(const vector<unsigned int>& 
 	
 	unsigned long n_iids = lib_iindices_.size();
 	n_comparisons_ = (n_iids * n_iids + n_iids) / 2;
+	n_comparisons_backup_ = n_comparisons_;
 	
 	unsigned int n_threads = n_threads_;
 	if (n_comparisons_ < n_threads_)
@@ -1748,8 +1762,7 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const String& ou
 	{
 		for (unsigned int i=0; i!=lib_features_->size(); ++i)
 		{
-// 			tmp.push_back(make_pair((*lib_features_)[i], 0));
-			tmp.push_back(make_pair(&(*lib_features_)[i], 0));
+			tmp.push_back(make_pair((*lib_features_)[i], 0));
 		}
 		createInvertedIndices(tmp, lib_iindices_);
 	}
@@ -1767,8 +1780,7 @@ bool BinaryFingerprintMethods::cutoffSearch(const float cutoff, const String& ou
 		tmp.clear();
 		for (unsigned int i=0; i!=query_features_->size(); ++i)
 		{
-// 			tmp.push_back(make_pair((*query_features_)[i], 0));
-			tmp.push_back(make_pair(&(*query_features_)[i], 0));
+			tmp.push_back(make_pair((*query_features_)[i], 0));
 		}
 		createInvertedIndices(tmp, query_iindices_);
 	}
@@ -1970,7 +1982,6 @@ bool BinaryFingerprintMethods::averageLinkageMerger(const vector<unsigned int>& 
 	clustering_method_ = STORED_DATA_PARALLEL;
 	
 	// Pointer to final root cluster
-	Cluster* root = NULL;
 	Cluster *cluster;
 	n_clusters_ = 0;
 	
@@ -1991,8 +2002,7 @@ bool BinaryFingerprintMethods::averageLinkageMerger(const vector<unsigned int>& 
 		
 		cluster->nn = NULL;
 		cluster->is_rnn = false;
-		// 			cluster->leaf_members.push_back((*lib_features_)[selection[i]]);
-		cluster->leaf_members.push_back(&(*lib_features_)[selection[i]]);
+		cluster->leaf_members.push_back((*lib_features_)[selection[i]]);
 		
 		vec_actives_.push_back(cluster);
 		leaf_clusters_.push_back(cluster);
@@ -2014,9 +2024,12 @@ bool BinaryFingerprintMethods::averageLinkageMerger(const vector<unsigned int>& 
 	
 	nn_data.clear();
 	
-	// Run RNN Parallel average linkage 
-	averageLinkageParallel(root, merge_steps);
+	// Run RNN Parallel average linkage
+	unordered_set<Cluster*> unjoined;
+	averageLinkageParallelMerger(merge_steps, unjoined);
 	
+	vec_actives_.insert(vec_actives_.end(), unjoined.begin(), unjoined.end());
+	unjoined.clear();
 	
 	for (unsigned int i=0; i!=vec_actives_.size(); ++i)
 	{
@@ -2093,7 +2106,7 @@ bool BinaryFingerprintMethods::averageLinkageClustering(const vector<unsigned in
 			cluster->nn = NULL;
 			cluster->is_rnn = false;
 // 			cluster->leaf_members.push_back((*lib_features_)[selection[i]]);
-			cluster->leaf_members.push_back(&(*lib_features_)[selection[i]]);
+			cluster->leaf_members.push_back((*lib_features_)[selection[i]]);
 			
 			vec_actives_.push_back(cluster);
 			leaf_clusters_.push_back(cluster);
@@ -2124,7 +2137,7 @@ bool BinaryFingerprintMethods::averageLinkageClustering(const vector<unsigned in
 		nn_data.clear();
 		
 		// Run RNN Parallel average linkage 
-		averageLinkageParallel(root, 0);
+		averageLinkageParallel(root);
 	}
 	else
 	{
@@ -2655,7 +2668,268 @@ void BinaryFingerprintMethods::calculateParallelSimilaritiesThread(const unsigne
 }
 
 
-void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root, const unsigned int merging_steps)
+void BinaryFingerprintMethods::averageLinkageParallelMerger(const unsigned int merge_steps, unordered_set<Cluster*>& unjoined)
+{
+	unjoined.clear();
+	
+	if (threads_==NULL)
+	{
+		createThreadData(blocksize_, vec_actives_.size(), active_iids_size_);
+	}
+	
+	for (unsigned int i=0; i!=n_threads_; ++i)
+	{
+		for (unsigned int j=0; j!=active_iids_size_; ++j)
+		{
+			for (unsigned int k=0; k!=vec_actives_.size(); ++k)
+			{
+				thread_data_[i].dprec_matrix[j][k] = 0.0;
+			}
+		}
+	}
+	
+	unsigned int rnn_pairs;
+	unsigned int merge_counter = 0;
+	
+	Cluster* cl;
+	vector<Cluster*> tmp_actives;
+	vector<pair<const vector<unsigned short>*, unsigned int> > tmp;
+	
+	while (merge_counter < merge_steps)
+	{
+		++merge_counter;
+		
+		rnn_pairs = 0;
+		for (unsigned int i=0; i!=vec_actives_.size(); ++i)
+		{
+			if (vec_actives_[i] == vec_actives_[i]->nn->nn)
+			{
+				// RNN pair found
+				if (!vec_actives_[i]->is_rnn)
+				{
+					if (vec_actives_[i]->predecessor_sim < 0.6)
+					{
+						unjoined.insert(vec_actives_[i]);
+						unjoined.insert(vec_actives_[i]->nn);
+					}
+					else
+					{
+						// RNN pair not yet visited
+						vec_actives_[i]->is_rnn = true;
+						vec_actives_[i]->nn->is_rnn = true;
+						
+						cl = mergeClusters(vec_actives_[i], vec_actives_[i]->nn, vec_actives_[i]->predecessor_sim);
+						cl->is_rnn = false;
+						cl->nn = NULL;
+						cl->predecessor_sim = -1.0;
+						
+						tmp_actives.push_back(cl);
+						
+						++rnn_pairs;
+					}
+				}
+			}
+		}
+		
+		for (unsigned int i=0; i!=vec_actives_.size(); ++i)
+		{
+			if (!vec_actives_[i]->is_rnn)
+			{
+				if (unjoined.find(vec_actives_[i])==unjoined.end())
+				{
+					if (vec_actives_[i]->nn->is_rnn)
+					{
+						// No RNN but nearest neighbour is an RNN
+						vec_actives_[i]->nn = NULL;
+						vec_actives_[i]->predecessor_sim = -1.0;
+						tmp_actives.push_back(vec_actives_[i]);
+					}
+					else
+					{
+						// Cluster has still a correct nearest neighbour
+						vec_inactives_.push_back(vec_actives_[i]);
+					}
+				}
+			}
+		}
+		vec_actives_ = tmp_actives;
+		tmp_actives.clear();
+		
+		
+		if (verbosity_ >= 10)
+		{
+			Log << "++ " << rnn_pairs << " / " << vec_actives_.size() << " / " << vec_inactives_.size() << " / " << n_clusters_
+			<< "   (RNNPairs / Actives / Inactives / Clusters)" << endl; 
+		}
+		
+		// Finished ...
+		if (vec_actives_.size() == 1 && vec_inactives_.size() == 0)
+		{
+			return;
+		}
+		
+		// ----------------------------------------------------------------------
+		// Create InvertedIndices for active and inactive clusters
+		// ----------------------------------------------------------------------
+		
+		// Create feature blocks for inactive clusters,
+		// i.e. clusters for which the nearest neighbour is still correct
+		for (unsigned int i=0; i!=vec_inactives_.size(); ++i)
+		{
+			for (unsigned int j=0; j!=vec_inactives_[i]->leaf_members.size(); ++j)
+			{
+				// 				tmp.push_back(make_pair(vec_inactives_[i]->leaf_members[j], i));
+				tmp.push_back(make_pair(vec_inactives_[i]->leaf_members[j], i));
+			}
+		}
+		createInvertedIndices(tmp, lib_iindices_);
+		
+		// Create feature InvertedIndices from active clusters
+		tmp.clear();
+		unsigned int count = 0;
+		for (unsigned int i=0; i!=vec_actives_.size(); ++i)
+		{
+			for (unsigned int j=0; j!=vec_actives_[i]->leaf_members.size(); ++j)
+			{
+				// 				tmp.push_back(make_pair(vec_actives_[i]->leaf_members[j], count));
+				tmp.push_back(make_pair(vec_actives_[i]->leaf_members[j], count));
+			}
+			
+			++count;
+			
+			if ((i+1) % active_iids_size_ == 0)
+			{
+				active_iids_.push_back(make_pair(vector<InvertedIndex*>(), count));
+				createInvertedIndices(tmp, active_iids_.rbegin()->first);
+				tmp.clear();
+				
+				count = 0;
+			}
+		}
+		
+		if (tmp.size()!=0)
+		{
+			active_iids_.push_back(make_pair(vector<InvertedIndex*>(), count));
+			createInvertedIndices(tmp, active_iids_.rbegin()->first);
+			tmp.clear();
+		}
+		
+		// ----------------------------------------------------------------------
+		// SIMILARITY CALCULATIONS - active vs inactive clusters
+		// ----------------------------------------------------------------------
+		
+		if (verbosity_ >= 10)
+		{
+			Log << "++ actives - inactives ... ";
+		}
+		
+		if (vec_inactives_.size()!=0)
+		{
+			n_comparisons_ = active_iids_.size();
+			
+			for (unsigned int i=0; i!=n_threads_; ++i)
+			{
+				threads_[i] = thread(bind(&BinaryFingerprintMethods::calculateParallelSimilaritiesThread, this, i));
+			}
+			
+			for (unsigned int i=0; i!=n_threads_; ++i)
+			{
+				threads_[i].join();
+			}
+			
+			// Clean up
+			destroyInvertedIndices(lib_iindices_);
+		}
+		
+		if (verbosity_ >= 10)
+		{
+			Log << "done" << endl;
+		}
+		
+		// ----------------------------------------------------------------------
+		// SIMILARITY CALCULATIONS - active vs active clusters
+		// ----------------------------------------------------------------------
+		
+		if (verbosity_ >= 10)
+		{
+			Log << "++ actives - actives ... ";
+		}
+		
+		n_comparisons_ = (active_iids_.size() * active_iids_.size() + active_iids_.size()) / 2;
+		
+		for (unsigned int i=0; i!=n_threads_; ++i)
+		{
+			for (unsigned int j=0; j!=vec_actives_.size(); ++j)
+			{
+				thread_data_[i].float_array[j] = -1.0;
+				thread_data_[i].uint_array[j] = 0;
+			}
+			
+			threads_[i] = thread(bind(&BinaryFingerprintMethods::calculateParallelSimilaritiesActivesThread, this, i));
+		}
+		
+		for (unsigned int i=0; i!=n_threads_; ++i)
+		{
+			threads_[i].join();
+		}
+		
+		if (verbosity_ >= 10)
+		{
+			Log << "done" << endl;
+		}
+		
+		// Clean up
+		for (unsigned int i=0; i!=active_iids_.size(); ++i)
+		{
+			for (unsigned int j=0; j!=active_iids_[i].first.size(); ++j)
+			{
+				destroyInvertedIndex(active_iids_[i].first[j]);
+			}
+			active_iids_[i].first.clear();
+		}
+		active_iids_.clear();
+		
+		
+		for (unsigned int i=0; i!=vec_actives_.size(); ++i)
+		{
+			if (vec_inactives_.size() == 0)
+			{
+				vec_actives_[i]->nn = NULL;
+				vec_actives_[i]->predecessor_sim = -1.0;
+			}
+			
+			for (unsigned int j=0; j!=n_threads_; ++j)
+			{
+				if (fabs(thread_data_[j].float_array[i] - vec_actives_[i]->predecessor_sim) <= precision_)
+				{
+					if (vec_actives_[i]->nn->c_id > vec_actives_[thread_data_[j].uint_array[i]]->c_id)
+					{
+						vec_actives_[i]->nn = vec_actives_[thread_data_[j].uint_array[i]];
+						vec_actives_[i]->predecessor_sim = thread_data_[j].float_array[i];
+					}
+				}
+				else
+				{
+					if (thread_data_[j].float_array[i] > vec_actives_[i]->predecessor_sim)
+					{
+						vec_actives_[i]->nn = vec_actives_[thread_data_[j].uint_array[i]];
+						vec_actives_[i]->predecessor_sim = thread_data_[j].float_array[i];
+					}
+				}
+			}
+		}
+		
+		vec_actives_.insert(vec_actives_.end(), vec_inactives_.begin(), vec_inactives_.end());
+		vec_inactives_.clear();
+	}
+	
+	destroyThreadData();
+	
+	return;
+}
+
+
+void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root)
 {
 	if (threads_==NULL)
 	{
@@ -2678,23 +2952,10 @@ void BinaryFingerprintMethods::averageLinkageParallel(Cluster*& root, const unsi
 	
 	Cluster* cl;
 	vector<Cluster*> tmp_actives;
-	//vector<pair<unsigned short*, unsigned int> > tmp;
 	vector<pair<const vector<unsigned short>*, unsigned int> > tmp;
 	
-	unsigned int merge_counter = 0;
 	while (true)
 	{
-		if (merging_steps != 0)
-		{
-			if (merge_counter == merging_steps)
-			{
-				destroyThreadData();
-				return;
-			}
-			
-			++merge_counter;
-		}
-		
 		rnn_pairs = 0;
 		for (unsigned int i=0; i!=vec_actives_.size(); ++i)
 		{

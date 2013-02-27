@@ -56,11 +56,11 @@ String fp_tag;
 String id_tag;
 
 
-void readFingerprintsCSV(LineBasedFile& fprints_in, vector<vector<unsigned short> >& mol_features, vector<String>& mol_identifiers)
+void readFingerprintsCSV(LineBasedFile& fprints_in, vector<vector<unsigned short>* >& mol_features, vector<String>& mol_identifiers)
 {
 	String fprint;
 	String identifier;
-	vector<unsigned short> features;
+	vector<unsigned short>* features;
 	unsigned int mol_count = 0;
 	
 	mol_features.clear();
@@ -89,13 +89,15 @@ void readFingerprintsCSV(LineBasedFile& fprints_in, vector<vector<unsigned short
 			fixed_size_len = fprint.size();
 		}
 		
-		if (BinaryFingerprintMethods::parseBinaryFingerprint(fprint, features, fprint_format))
+		features = new vector<unsigned short>;
+		if (BinaryFingerprintMethods::parseBinaryFingerprint(fprint, *features, fprint_format))
 		{
 			mol_features.push_back(features);
 			mol_identifiers.push_back(identifier);
 		}
 		else
 		{
+			delete features;
 			Log.error() << "-- WARNING: Fingerprint could not be read" << endl;
 		}
 		
@@ -114,11 +116,11 @@ void readFingerprintsCSV(LineBasedFile& fprints_in, vector<vector<unsigned short
 }
 
 
-void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short> >& mol_features, vector<String>& mol_identifiers)
+void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short>* >& mol_features, vector<String>& mol_identifiers)
 {
 	String fprint;
 	String identifier;
-	vector<unsigned short> features;
+	vector<unsigned short>* features;
 	unsigned int mol_count = 0;
 	
 	mol_features.clear();
@@ -139,7 +141,8 @@ void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short> >& mo
 					fixed_size_len = fprint.size();
 				}
 				
-				if (BinaryFingerprintMethods::parseBinaryFingerprint(fprint, features, fprint_format))
+				features = new vector<unsigned short>;
+				if (BinaryFingerprintMethods::parseBinaryFingerprint(fprint, *features, fprint_format))
 				{
 					mol_features.push_back(features);
 					mol_identifiers.push_back(identifier);
@@ -150,6 +153,10 @@ void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short> >& mo
 					{
 						break;
 					}
+				}
+				else
+				{
+					delete features;
 				}
 			}
 		}
@@ -163,7 +170,7 @@ void readFingerprintsSDF(SDFile* fprints_in, vector<vector<unsigned short> >& mo
 }
 
 
-void uniqueFingerprintsFilter(vector<vector<unsigned short> >& mol_features, const vector<String>& mol_identifiers)
+void uniqueFingerprintsFilter(vector<vector<unsigned short>* >& mol_features, const vector<String>& mol_identifiers)
 {
 	locale loc;
 	const collate<char>& coll = use_facet<collate<char> >(loc);
@@ -176,9 +183,9 @@ void uniqueFingerprintsFilter(vector<vector<unsigned short> >& mol_features, con
 	for (unsigned int i=0; i!=mol_features.size(); ++i)
 	{
 		fp = "";
-		for (unsigned int j=0; j!=mol_features[i].size(); ++j)
+		for (unsigned int j=0; j!=mol_features[i]->size(); ++j)
 		{
-			fp += String(mol_features[i][j]);
+			fp += String((*mol_features[i])[j]);
 		}
 		
 		fp_hash = coll.hash(fp.data(), fp.data() + fp.length());
@@ -202,7 +209,7 @@ void uniqueFingerprintsFilter(vector<vector<unsigned short> >& mol_features, con
 	out << "# The first column is a global internal ID [0, n-1] where n is the number of unique fingerprints." << endl;
 	out << "# The second and possibly following columns list the external molecule identifiers of the fingerprint duplicates. " << endl;
 	
-	vector<vector<unsigned short> > tmp_features;
+	vector<vector<unsigned short>* > tmp_features;
 	for (unsigned int i=0; i!=duplicates.size(); ++i)
 	{
 		// Keep first occurrence of new feature list
@@ -297,7 +304,7 @@ void writeConnectedComponents(const vector<unsigned int>& m_indices,
 }
 
 
-bool readFingerprints(const String& input_file, vector<vector<unsigned short> >& mol_features, vector<String>& mol_identifiers)
+bool readFingerprints(const String& input_file, vector<vector<unsigned short>* >& mol_features, vector<String>& mol_identifiers)
 {
 	if (!MolFileFactory::isFileExtensionSupported(input_file))
 	{
@@ -508,7 +515,7 @@ $ FingerprintSimilarityClustering -t target.sdf -fp_tag FPRINT -f 1 -id_tag NAME
 	
 	is_lib_sdf = false;
 	vector<String> mol_identifiers;
-	vector<vector<unsigned short> > mol_features;
+	vector<vector<unsigned short>* > mol_features;
 	
 	bool read_success = readFingerprints(parpars.get("t"), mol_features, mol_identifiers);
 	
@@ -654,6 +661,11 @@ $ FingerprintSimilarityClustering -t target.sdf -fp_tag FPRINT -f 1 -id_tag NAME
 		}
 	}
 	
+	for (unsigned int i=0; i!=mol_features.size(); ++i)
+	{
+		delete mol_features[i];
+	}
+	mol_features.clear();
 	
 	// ------------------------------------------------------------------------------------------
 	// Remap fingerprint duplicates
