@@ -509,6 +509,10 @@ $ FingerprintSimilarityClustering -t target.sdf -fp_tag FPRINT -f 1 -id_tag NAME
 		id_tag = parpars.get("id_tag");
 	}
 	
+	
+	Log.setLevel(12);
+	
+	
 	// Read library fingerprints
 	Log.level(10) << "++ --------------------------------------------------------" << endl;
 	Log.level(10) << "++ Read target library ... " << endl;

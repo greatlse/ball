@@ -364,6 +364,10 @@ $ FingerprintSimilaritySearch -t target.sdf -q query.smi -o results -fp_tag FPRI
 		return 1;
 	}
 	
+	
+	Log.setLevel(12);
+	
+	
 	// Read library fingerprints
 	Log.level(10) << "++" << endl;
 	Log.level(10) << "++ Read target library ... " << endl;

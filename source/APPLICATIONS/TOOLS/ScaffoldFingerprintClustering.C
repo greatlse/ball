@@ -16,7 +16,6 @@
 
 #include <locale>
 
-#include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -75,10 +74,9 @@ void simpleDistributionAnalysis()
 	
 	set<unsigned int> sizes;
 	
-	pair<unsigned int, vector<Molecule*> > scl;
-	BOOST_FOREACH(scl, molecules)
+	for (unordered_map<unsigned int, vector<Molecule*> >::iterator it=molecules.begin(); it!=molecules.end(); ++it)
 	{
-		unsigned int size = scl.second.size();
+		unsigned int size = it->second.size();
 		sizes.insert(size);
 		
 		if (size==1)
@@ -528,6 +526,8 @@ int main(int argc, char* argv[])
 	Timer* t = new Timer();
 	t->start();
 	
+	
+	Log.setLevel(12);
 	
 	
 	// ------------------------------------------------------------------------------------------
