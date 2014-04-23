@@ -70,26 +70,17 @@ void ParamFile::writeSection(String section_name, String section_description, St
 	}
 
 	xmlOut_->writeStartElement("tool");
-	xmlOut_->writeAttribute("status", "internal");
-	xmlOut_->writeStartElement("name");
-	xmlOut_->writeCharacters(section_name.c_str());
-	xmlOut_->writeEndElement();
-	xmlOut_->writeStartElement("version");
-	xmlOut_->writeCharacters(version.c_str());
-	xmlOut_->writeEndElement();
+	xmlOut_->writeAttribute("name", section_name.c_str());
+	xmlOut_->writeAttribute("version", version.c_str());
+	xmlOut_->writeAttribute("docurl", "http://www.ball-project.org/caddsuite");
+	xmlOut_->writeAttribute("category", category.c_str());
+
 	xmlOut_->writeStartElement("description");
 	xmlOut_->writeCharacters(section_description.c_str());
 	xmlOut_->writeEndElement();
+
 	xmlOut_->writeStartElement("manual");
 	xmlOut_->writeCDATA(section_helptext.c_str());
-	xmlOut_->writeEndElement();
-
-	xmlOut_->writeStartElement("docurl");
-	xmlOut_->writeEndElement();
-	xmlOut_->writeStartElement("category");
-	xmlOut_->writeCharacters(category.c_str());
-	xmlOut_->writeEndElement();
-	xmlOut_->writeStartElement("type");
 	xmlOut_->writeEndElement();
 
 	xmlOut_->writeStartElement("PARAMETERS");
@@ -133,13 +124,11 @@ void ParamFile::writeSection(String section_name, String section_description, St
 		String tag = "";
 		if(d_it->second.type==INFILE)
 		{
-			tag = "input file";
-			type = "string";
+			type = "input-file";
 		}
 		else if(d_it->second.type==OUTFILE)
 		{
-			tag = "output file";
-			type = "string";
+			type = "output-file";
 		}
 		else if(d_it->second.type==STRING)
 		{
@@ -155,14 +144,12 @@ void ParamFile::writeSection(String section_name, String section_description, St
 		}
 		if(d_it->second.type==INFILELIST)
 		{
-			tag = "input file";
-			type = "string";
+			type = "input-file";
 			is_list = true;
 		}
 		if(d_it->second.type==OUTFILELIST)
 		{
-			tag = "output file";
-			type = "string";
+			type = "output-file";
 			is_list = true;
 		}
 		if(d_it->second.type==STRINGLIST)
@@ -191,25 +178,6 @@ void ParamFile::writeSection(String section_name, String section_description, St
 			tag = "galaxy_opt_outid";
 		}
 
-
-		if (d_it->second.mandatory)
-		{
-			if (tag != "")
-			{
-				tag += ", ";
-			}
-			tag += "mandatory";
-		}
-
-		if (d_it->second.advanced)
-		{
-			if (tag != "")
-			{
-				tag += ", ";
-			}
-			tag += "advanced";
-		}
-
 		if(!is_list)
 		{
 			xmlOut_->writeStartElement("ITEM");
@@ -221,12 +189,18 @@ void ParamFile::writeSection(String section_name, String section_description, St
 
 		xmlOut_->writeAttribute("name",d_it->first.c_str());
 		xmlOut_->writeAttribute("type",type.c_str());
-		if (d_it->second.hidden)
-			xmlOut_->writeAttribute("hidden", "true");
 		xmlOut_->writeAttribute("description",d_it->second.description.c_str());
 		if(tag!="")
 		{
 			xmlOut_->writeAttribute("tags",tag.c_str());
+		}
+		if(d_it->second.mandatory)
+		{
+			xmlOut_->writeAttribute("required", "true");
+		}
+		if(d_it->second.advanced)
+		{
+			xmlOut_->writeAttribute("advanced", "true");
 		}
 
 		if (!d_it->second.allowed_values.empty())
@@ -260,14 +234,13 @@ void ParamFile::writeSection(String section_name, String section_description, St
 			xmlOut_->writeAttribute("supported_formats", formats.c_str());
 		}
 
-		if (d_it->second.output_format_source != "")
-		{
-			xmlOut_->writeAttribute("output_format_source", d_it->second.output_format_source.c_str());
-		}
-
 		if(value_it==values.end()) // no value has been set for this parameter
 		{
-			xmlOut_->writeAttribute("value","");
+			// ITEMLIST elements DO NOT have "value" attribute
+			if (!is_list)
+			{
+				xmlOut_->writeAttribute("value","");
+			}
 		}
 		else
 		{
@@ -503,12 +476,6 @@ void ParamFile::readSection(String& section_name, String& section_description, S
 					{
 						pd.supported_formats.push_back(v[i].trim());
 					}
-				}
-
-				if (attrs.hasAttribute("output_format_source"))
-				{
-					String source = attrs.value("output_format_source").toString().toStdString();
-					pd.output_format_source = source;
 				}
 
 				if (!is_list)

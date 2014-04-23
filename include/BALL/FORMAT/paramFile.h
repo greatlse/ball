@@ -50,7 +50,6 @@ namespace BALL
 			mandatory = false;
 			advanced = false;
 			type = INFILE;
-			output_format_source = "";
 			allowed_values.clear();
 			supported_formats.clear();
 			hidden = false;
@@ -62,10 +61,6 @@ namespace BALL
 		bool mandatory;
 		bool advanced;
 		ParameterType type;
-
-		/** In case of ouput-files, this variable allows to specify the name of an input-parameter, whose format should be used as ouput-format. \n
-		Note, that this variable will be used only for the creation of config-files for workflow-systems (Galaxy, Knime, etc.) and not for the command-line interface, where the user will directly specify output-filenames. */
-		String output_format_source;
 
 		/** If this list is empty, then there are no restrictions on the value of the parameter */
 		list<String> allowed_values;
