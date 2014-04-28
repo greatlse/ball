@@ -307,7 +307,7 @@ void CommandlineParser::parse(int argc, char* argv[])
 	map<String, list<String> > default_values = parameter_map_;
 	parameter_map_.clear();
 
-	bool name_read = 0;
+	bool name_read = false;
 	String current_par_name="";
 	String token = "";
 	start_command_ = "";

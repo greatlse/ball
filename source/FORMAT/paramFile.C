@@ -333,7 +333,6 @@ void ParamFile::readSection(String& section_name, String& section_description, S
 			}
 
 			QXmlStreamAttributes attrs = xmlIn_->attributes();
-			String category = "";
 			if (tagname=="NODE")
 			{
 				inside_par_node++;
