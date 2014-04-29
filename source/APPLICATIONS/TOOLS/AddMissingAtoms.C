@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	parpars.registerParameter("o", "output file", OUTFILE, true);
 
 	parpars.setSupportedFormats("i","pdb");
-	parpars.setSupportedFormats("o","pdb,drf");
+	parpars.setSupportedFormats("o","pdb");
 
 	parpars.registerFlag("opt_hyd", "optimize the positions of hydrogens", false);
 
