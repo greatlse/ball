@@ -211,8 +211,14 @@ void ParamFile::writeSection(String section_name, String section_description, St
 			{
 				if (restr != "")
 				{
-					if (type == "string") restr += ", ";
-					else restr += ":";
+					if (type == "string")
+					{
+						restr += ", ";
+					}
+					else
+					{
+						restr += ":";
+					}
 				}
 				restr += *it;
 			}

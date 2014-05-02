@@ -215,6 +215,18 @@ void CommandlineParser::setParameterRestrictions(String par_name, double min_val
 	it->second.allowed_values.push_back(String(max_value));
 }
 
+void CommandlineParser::setParameterRestrictions(String par_name, int min_value, int max_value)
+{
+	map<String, ParameterDescription>::iterator it = registered_parameters_.find(par_name);
+	if (it == registered_parameters_.end())
+	{
+		throw BALL::Exception::GeneralException(__FILE__,__LINE__,"setParameterRestrictions error","You need to register a parameter before you can set restrictions for it!");
+	}
+	it->second.allowed_values.clear();
+	it->second.allowed_values.push_back(String(min_value));
+	it->second.allowed_values.push_back(String(max_value));
+}
+
 void CommandlineParser::setParameterRestrictions(String par_name, list<String>& allowed_values)
 {
 	map<String, ParameterDescription>::iterator it = registered_parameters_.find(par_name);

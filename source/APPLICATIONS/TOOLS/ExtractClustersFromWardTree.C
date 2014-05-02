@@ -58,7 +58,7 @@ int main (int argc, char **argv)
 	// we register the cutoff value, either the minimal ward distance between the clusters
 	//                               or the number of clusters to split into
 	parpars.registerParameter("cut_value", "cut value for splitting the given WART tree using the cutoff-type (default 5.0) ", DOUBLE, false, 5.0);
-	parpars.setParameterRestrictions("cut_value", 0.0, 10000);
+	parpars.setParameterRestrictions("cut_value", 0.0, 10000.0);
 
 	// we register a parameter defining the minimal size of clusters - e.g. for filtering out single outlieers
 	parpars.registerParameter("min_size", "minimal size of clusters (default 1) ", INT, false, 1);
